@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.2.0 - Unreleased
+## Unreleased
+
+- Match release readiness checks to Yarn's registry requests and retry installation
+  only when the newly published version is still unavailable. Keep registry
+  consumer caches isolated and fail immediately on other installation errors.
+
+## 0.2.0 - 2026-10-16
 
 Initial standalone release of `@gaia-framework/config`.
 

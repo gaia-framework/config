@@ -1,4 +1,13 @@
 import assert from 'node:assert/strict';
+import { stripVTControlCharacters } from 'node:util';
+
+interface InstallationResult {
+  status: number | null;
+  signal?: NodeJS.Signals | null;
+  error?: Error;
+  stdout: string;
+  stderr: string;
+}
 
 const registry = 'https://registry.npmjs.org';
 const attempts = 30;
@@ -11,9 +20,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function versionAvailable(name: string, version: string): Promise<boolean> {
   try {
-    const response = await fetch(`${registry}/${encodeURIComponent(name)}`, {
-      // Check the same abbreviated metadata that Yarn uses during resolution.
-      headers: { accept: 'application/vnd.npm.install-v1+json' },
+    // Yarn 4 requests full metadata with a literal @ and a lowercase encoded slash.
+    const response = await fetch(`${registry}/${name.replace('/', '%2f')}`, {
       signal: AbortSignal.timeout(requestTimeout)
     });
 
@@ -50,15 +58,50 @@ async function versionAvailable(name: string, version: string): Promise<boolean>
   }
 }
 
-export async function waitForRegistry(name: string, version: string): Promise<void> {
+function installationAvailable(result: InstallationResult, name: string, version: string): boolean {
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status === 0) {
+    return true;
+  }
+
+  const output = stripVTControlCharacters(`${result.stdout}\n${result.stderr}`);
+  const errors: readonly string[] = output.match(/\bYN\d{4}\b/g) ?? [];
+  const candidateFailures = output.split('\n').filter((line) => line.includes('YN0082'));
+  const pendingVersion = candidateFailures.every((line) =>
+    line.includes(`${name}@npm:${version}: No candidates found`)
+  );
+  if (
+    result.status !== null &&
+    !result.signal &&
+    pendingVersion &&
+    errors.includes('YN0082') &&
+    errors.every((code) => code === 'YN0000' || code === 'YN0082')
+  ) {
+    return false;
+  }
+
+  assert.fail(`Public registry consumer installation failed:\n${output}`);
+}
+
+export async function waitForRegistry(
+  name: string,
+  version: string,
+  install?: () => InstallationResult
+): Promise<void> {
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    if (await versionAvailable(name, version)) {
+    if (
+      (await versionAvailable(name, version)) &&
+      (!install || installationAvailable(install(), name, version))
+    ) {
       return;
     }
 
     if (attempt < attempts) {
       console.log(
-        `Waiting for public npm metadata for ${name}@${version} (${attempt}/${attempts}).`
+        `Waiting for public npm availability for ${name}@${version} (${attempt}/${attempts}).`
       );
       await new Promise<void>((resolve) => setTimeout(resolve, retryDelay));
     }

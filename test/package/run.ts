@@ -123,10 +123,6 @@ function packLibrary(tarball: string) {
   }
 }
 
-if (fromRegistry) {
-  await waitForRegistry(sourceManifest.name, sourceManifest.version);
-}
-
 run(['scripts/build.ts']);
 mkdirSync(path.join(root, 'artifacts'), { recursive: true });
 const tarball = path.join(root, `artifacts/gaia-framework-config-${sourceManifest.version}.tgz`);
@@ -152,7 +148,24 @@ try {
     path.join(directory, '.yarnrc.yml'),
     'nodeLinker: node-modules\nnpmRegistryServer: "https://registry.npmjs.org"\n'
   );
-  run([yarn, 'install'], directory, { ...process.env, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' });
+  const installEnv: NodeJS.ProcessEnv = {
+    ...process.env,
+    YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
+    ...(fromRegistry ? { YARN_GLOBAL_FOLDER: path.join(directory, '.yarn-global') } : {})
+  };
+  if (fromRegistry) {
+    await waitForRegistry(sourceManifest.name, sourceManifest.version, () =>
+      spawnSync(process.execPath, [yarn, 'install'], {
+        cwd: directory,
+        env: installEnv,
+        encoding: 'utf8',
+        maxBuffer: 8 * 1024 * 1024
+      })
+    );
+  } else {
+    run([yarn, 'install'], directory, installEnv);
+  }
+
   const installed = path.join(directory, 'node_modules', '@gaia-framework', 'config');
   assert.equal(existsSync(path.join(directory, 'node_modules/config')), false);
   for (const name of [
@@ -236,7 +249,7 @@ try {
       /(?:^|\/)(?:performance-|refactor-|review-)|source-manifest|dependency-baseline/.test(name)
     )
   );
-  const cleanEnv = { ...process.env };
+  const cleanEnv = { ...installEnv };
   delete cleanEnv.NODE_OPTIONS;
   delete cleanEnv.NODE_PATH;
 

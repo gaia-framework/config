@@ -36,8 +36,8 @@ describe('Public registry availability', () => {
 
     sinon.assert.calledOnce(request);
     const [url, options] = request.firstCall.args;
-    assert.equal(url, 'https://registry.npmjs.org/%40gaia-framework%2Fconfig');
-    assert.deepEqual(options?.headers, { accept: 'application/vnd.npm.install-v1+json' });
+    assert.equal(url, 'https://registry.npmjs.org/@gaia-framework%2fconfig');
+    assert.equal(options?.headers, undefined);
     assert.ok(options?.signal instanceof AbortSignal);
     assert.equal(clock.now, 0);
   });
@@ -52,6 +52,109 @@ describe('Public registry availability', () => {
 
     sinon.assert.calledTwice(request);
     assert.equal(clock.now, 10_000);
+  });
+
+  it('also waits for Yarn installation after metadata becomes available', async () => {
+    request.callsFake(async () => published());
+    const install = sinon.stub();
+    install.onFirstCall().returns({
+      status: 1,
+      stdout: `\u001b[31mYN0082: ${name}@npm:${version}: No candidates found\u001b[0m`,
+      stderr: ''
+    });
+    install.onSecondCall().returns({ status: 0, stdout: '', stderr: '' });
+
+    const waiting = waitForRegistry(name, version, install);
+    await clock.runAllAsync();
+    await waiting;
+
+    sinon.assert.calledTwice(install);
+    sinon.assert.calledTwice(request);
+    assert.equal(clock.now, 10_000);
+  });
+
+  it('does not attempt installation until metadata contains the version', async () => {
+    request.onFirstCall().resolves(metadata());
+    request.onSecondCall().resolves(published());
+    const install = sinon.stub().returns({ status: 0, stdout: '', stderr: '' });
+
+    const waiting = waitForRegistry(name, version, install);
+    await clock.runAllAsync();
+    await waiting;
+
+    sinon.assert.calledOnce(install);
+  });
+
+  it('bounds retries when Yarn never resolves the newly published version', async () => {
+    request.callsFake(async () => published());
+    const install = sinon.stub().returns({
+      status: 1,
+      stdout: `YN0082: ${name}@npm:${version}: No candidates found`,
+      stderr: ''
+    });
+
+    const failure = assert.rejects(
+      waitForRegistry(name, version, install),
+      /after 30 checks.*do not republish/
+    );
+    await clock.runAllAsync();
+    await failure;
+
+    assert.equal(install.callCount, 30);
+    assert.equal(clock.now, 290_000);
+  });
+
+  for (const output of [
+    `YN0041: ${name}@npm:${version}: Invalid authentication`,
+    'YN0082: another-package@npm:1.0.0: No candidates found',
+    `YN0082: ${name}@npm:9.9.9: No candidates found`,
+    `YN0082: ${name}@npm:${version}: No candidates found\nYN0041: Invalid authentication`,
+    `YN0082: ${name}@npm:${version}: No candidates found\nYN0082: dependency@npm:1.0.0: No candidates found`,
+    'A lifecycle script failed.'
+  ]) {
+    it(`does not retry a terminal installation failure: ${output}`, async () => {
+      request.resolves(published());
+      const install = sinon.stub().returns({ status: 1, stdout: output, stderr: '' });
+
+      await assert.rejects(waitForRegistry(name, version, install), /installation failed/);
+
+      sinon.assert.calledOnce(install);
+      assert.equal(clock.now, 0);
+    });
+  }
+
+  it('does not retry a failed process launch', async () => {
+    request.resolves(published());
+    const error = new Error('Unable to launch Yarn');
+    const install = sinon.stub().returns({ status: null, error, stdout: '', stderr: '' });
+
+    await assert.rejects(waitForRegistry(name, version, install), error);
+
+    sinon.assert.calledOnce(install);
+  });
+
+  it('does not retry an interrupted installation', async () => {
+    request.resolves(published());
+    const install = sinon.stub().returns({
+      status: null,
+      signal: 'SIGTERM',
+      stdout: `YN0082: ${name}@npm:${version}: No candidates found`,
+      stderr: ''
+    });
+
+    await assert.rejects(waitForRegistry(name, version, install), /installation failed/);
+
+    sinon.assert.calledOnce(install);
+  });
+
+  it('uses the plain package path for unscoped packages', async () => {
+    request.resolves(
+      Response.json({ name: 'example', versions: { [version]: { name: 'example', version } } })
+    );
+
+    await waitForRegistry('example', version);
+
+    assert.equal(request.firstCall.args[0], 'https://registry.npmjs.org/example');
   });
 
   for (const status of [404, 429, 500, 503]) {

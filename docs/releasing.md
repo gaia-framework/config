@@ -96,9 +96,13 @@ rejects an already-published version; matching retries bypass that command and
 verify integrity instead. A retry never changes an existing npm distribution tag.
 
 npm may accept an upload before it becomes installable. Registry acceptance
-checks public Yarn resolution metadata up to 30 times, with ten-second pauses
-and five-second request timeouts. Missing versions and transient errors retry;
-invalid metadata and terminal HTTP errors fail immediately. If processing lasts
+checks the same full-metadata URL used by the pinned Yarn runtime, then attempts
+the actual consumer installation. It checks up to 30 times, with ten-second pauses
+and five-second metadata request timeouts. The consumer uses its own disposable
+Yarn global folder. Missing versions, transient metadata errors and Yarn's exact
+`YN0082` “No candidates found” error for the release version retry. Authentication,
+dependency, script and other installation failures stop immediately, as do
+invalid metadata and terminal HTTP errors. If processing lasts
 longer, confirm availability and rerun only the failed verification jobs.
 
 After draft creation, archive upload and publication, the GitHub Release helper
