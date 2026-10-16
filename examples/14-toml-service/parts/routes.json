@@ -1,0 +1,17 @@
+{
+  "public": [
+    {
+      "path": "/health",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "path": "/documents",
+      "methods": [
+        "GET",
+        "POST"
+      ]
+    }
+  ]
+}

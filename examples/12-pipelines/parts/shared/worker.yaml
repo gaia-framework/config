@@ -1,0 +1,7 @@
+worker:
+  enabled: true
+  concurrency: ${PIPELINE_EXAMPLE_CONCURRENCY:-2}
+  timeoutMs: 30000
+  tags:
+    - synthetic
+    - shared

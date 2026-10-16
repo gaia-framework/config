@@ -1,0 +1,6 @@
+control:
+  port: 4480
+features:
+  audit: false
+logging:
+  level: debug

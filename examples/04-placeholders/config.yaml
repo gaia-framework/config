@@ -1,0 +1,6 @@
+name: ${EXAMPLE_NAME}
+fallback: ${EXAMPLE_MISSING:-local}
+empty: ${EXAMPLE_MISSING:-}
+enabled: ${EXAMPLE_ENABLED:-false}
+literal: $${EXAMPLE_NAME}
+message: hello ${EXAMPLE_NAME}

@@ -1,0 +1,24 @@
+node_modules/
+__pycache__/
+dist/
+coverage/
+artifacts/
+.evidence/
+.yarn/*
+!.yarn/releases/
+*.tgz
+.env
+.env.*
+config.local.yaml
+config.*.local.yaml
+!examples/**
+
+# Local agent handoff notes are not public project history.
+/JOURNAL.md
+/journal/
+
+# Private local overrides for supported file syntaxes.
+/config.local.toml
+/config.*.local.toml
+/config.local.yml
+/config.*.local.yml

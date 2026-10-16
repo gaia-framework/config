@@ -1,0 +1,12 @@
+{
+  "destinations": {
+    "primary": {
+      "name": "primary-output",
+      "url": "https://primary.example.test/batches"
+    },
+    "secondary": {
+      "name": "archive-output",
+      "url": "https://archive.example.test/batches"
+    }
+  }
+}

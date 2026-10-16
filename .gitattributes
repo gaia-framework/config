@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Preserve the vendored package manager bytes.
+/.yarn/releases/* -text -diff

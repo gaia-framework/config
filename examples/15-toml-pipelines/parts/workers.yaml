@@ -1,0 +1,10 @@
+ingest:
+  $include: ./shared/worker.toml#worker
+transform:
+  $include: ./shared/worker.toml#worker
+batch-runner:
+  enabled: false
+  concurrency: 1
+  timeoutMs: 45000
+  tags:
+    - batch

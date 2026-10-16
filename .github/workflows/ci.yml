@@ -1,0 +1,88 @@
+name: Config validation
+
+on:
+  # Main pushes run this same validation through publish.yml.
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-validation-${{ github.event_name }}-${{ github.event.pull_request.number || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    name: Select validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      actions: read
+
+    outputs:
+      required: ${{ steps.select.outputs.required }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Avoid duplicate feature-push validation when PR CI covers the commit
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/select-validation.ts
+
+  validate:
+    name: Node 24 / ${{ matrix.os }}
+    needs: select
+    if: >-
+      !cancelled() &&
+      (needs.select.result != 'success' || needs.select.outputs.required != 'false')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install frozen dependencies
+        run: node .yarn/releases/yarn-4.12.0.cjs install --immutable
+
+      - name: Validate library, docs, examples and independent consumer
+        run: node .yarn/releases/yarn-4.12.0.cjs validate
+
+      - name: Verify synthetic benchmark harness without timing thresholds
+        run: node .yarn/releases/yarn-4.12.0.cjs benchmark:smoke
+
+      - name: Upload validation and benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: config-validation-${{ matrix.os }}
+          path: |
+            coverage/
+            artifacts/
+          retention-days: 14

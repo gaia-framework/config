@@ -1,0 +1,6 @@
+[http]
+port = 4150
+corsOrigins = [ "https://local.example.test" ]
+
+[storage.fallbackDirectory]
+"$null" = true

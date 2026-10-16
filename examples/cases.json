@@ -1,0 +1,218 @@
+[
+  {
+    "directory": "01-memory",
+    "args": [],
+    "expected": {
+      "port": 4001,
+      "enabled": true
+    }
+  },
+  {
+    "directory": "02-files",
+    "args": [],
+    "expected": {
+      "port": 4002,
+      "name": "example"
+    }
+  },
+  {
+    "directory": "02-files",
+    "args": ["--config", "custom.yaml"],
+    "expected": {
+      "port": 5000
+    }
+  },
+  {
+    "directory": "03-overrides",
+    "args": [],
+    "expected": {
+      "port": 4002,
+      "enabled": true,
+      "my-provider": {
+        "under_score": "demo"
+      }
+    }
+  },
+  {
+    "directory": "04-placeholders",
+    "args": [],
+    "expected": {
+      "name": "demo",
+      "fallback": "local",
+      "empty": "",
+      "enabled": true,
+      "literal": "${EXAMPLE_NAME}",
+      "message": "hello demo"
+    }
+  },
+  {
+    "directory": "05-directives",
+    "args": [],
+    "expected": {
+      "label": "demo",
+      "text": "synthetic example text\n",
+      "yaml": {
+        "enabled": true
+      },
+      "fragment": "second"
+    }
+  },
+  {
+    "directory": "06-validation",
+    "args": [],
+    "expected": {
+      "raw": {
+        "port": "4001"
+      },
+      "validated": {
+        "port": 4001,
+        "enabled": true
+      }
+    }
+  },
+  {
+    "directory": "07-di",
+    "args": [],
+    "expected": {
+      "port": 4001
+    }
+  },
+  {
+    "directory": "08-conventions",
+    "args": [],
+    "expected": {
+      "service": {
+        "port": 4001
+      },
+      "platform": {
+        "port": 4002
+      }
+    }
+  },
+  {
+    "directory": "09-hardening",
+    "args": [],
+    "expected": {
+      "port": 4002,
+      "literal": "value",
+      "label": "isolated",
+      "strictPathRejected": true
+    }
+  },
+  {
+    "directory": "10-snapshots",
+    "args": [],
+    "expected": {
+      "paths": [["service"], ["service", "port"], ["literal.name"], ["list"]],
+      "literal": "synthetic",
+      "snapshotValue": "original",
+      "mutationRejected": true,
+      "aliasCycleDetected": true
+    }
+  },
+  {
+    "directory": "11-service",
+    "args": [],
+    "expected": {
+      "port": 4300,
+      "environment": "production",
+      "storage": "filesystem",
+      "cleanupInterval": 120,
+      "cleanupEnabled": false,
+      "route": "/health",
+      "fallbackDirectory": null,
+      "origins": ["https://local.example.test"],
+      "logLevel": "warn"
+    }
+  },
+  {
+    "directory": "12-pipelines",
+    "args": [],
+    "expected": {
+      "port": 4500,
+      "environment": "production",
+      "destination": "environment-primary",
+      "stages": ["read", "write"],
+      "timeoutMs": 60000,
+      "workerConcurrency": 2,
+      "batchEnabled": true,
+      "telemetryEnabled": false,
+      "fallbackDirectory": null,
+      "banner": "Synthetic batch processing service",
+      "literal": "${PIPELINE_EXAMPLE_ACCESS_KEY}",
+      "greeting": "Batch ready",
+      "label": "synthetic"
+    }
+  },
+  {
+    "directory": "13-toml",
+    "args": [],
+    "expected": {
+      "port": 6500,
+      "enabled": true,
+      "clear": null,
+      "label": "synthetic",
+      "text": "synthetic message",
+      "destination": "synthetic-output",
+      "defaulted": "schema-default"
+    }
+  },
+  {
+    "directory": "13-toml",
+    "args": ["--config", "config.toml", "--config", "explicit.yaml"],
+    "expected": {
+      "port": 6500,
+      "enabled": true,
+      "clear": "inherited",
+      "label": "explicit",
+      "text": "synthetic message",
+      "destination": "synthetic-output",
+      "defaulted": "schema-default"
+    }
+  },
+  {
+    "directory": "14-toml-service",
+    "args": [],
+    "expected": {
+      "port": 4300,
+      "environment": "production",
+      "storage": "filesystem",
+      "cleanupInterval": 120,
+      "cleanupEnabled": false,
+      "route": "/health",
+      "fallbackDirectory": null,
+      "origins": ["https://local.example.test"],
+      "logLevel": "warn"
+    }
+  },
+  {
+    "directory": "15-toml-pipelines",
+    "args": [],
+    "expected": {
+      "port": 4500,
+      "environment": "production",
+      "destination": "environment-primary",
+      "stages": ["read", "write"],
+      "timeoutMs": 60000,
+      "workerConcurrency": 2,
+      "batchEnabled": true,
+      "telemetryEnabled": false,
+      "fallbackDirectory": null,
+      "banner": "Synthetic batch processing service",
+      "literal": "${PIPELINE_EXAMPLE_ACCESS_KEY}",
+      "greeting": "Batch ready",
+      "label": "synthetic"
+    }
+  },
+  {
+    "directory": "16-large-configuration",
+    "args": [],
+    "expected": {
+      "componentCount": 1000,
+      "groupCount": 25,
+      "port": 4500,
+      "lastValue": 999,
+      "payloadChecked": true
+    }
+  }
+]

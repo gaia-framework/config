@@ -1,0 +1,84 @@
+{
+  "name": "@gaia-framework/config",
+  "version": "0.2.0",
+  "license": "MIT",
+  "description": "Synchronous layered YAML/TOML configuration with environment overrides, directives and schema validation.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaia-framework/config.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "type": "module",
+  "packageManager": "yarn@4.12.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "files": [
+    "dist/src/**",
+    "src",
+    "docs",
+    "examples",
+    "/README.md",
+    "/CONTRIBUTING.md",
+    "/CHANGELOG.md",
+    "/SECURITY.md",
+    "/LICENSE"
+  ],
+  "scripts": {
+    "lint": "yarn format:check && eslint --flag unstable_native_nodejs_ts_config src test/unit test/integration test/compatibility test/support test/package test/examples scripts/*.ts examples/**/*.ts && node --import=tsx test/support/check-docs.ts && node --import=tsx test/support/check-test-layout.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tooling.json --noEmit",
+    "test": "cross-env NODE_ENV=test node --import=tsx --import=reflect-metadata node_modules/mocha/bin/mocha.js --timeout 10000 \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\" \"test/compatibility/**/*.test.ts\"",
+    "test:coverage": "node scripts/build.ts --tests && c8 --all --include \"dist/src/**/*.js\" --exclude-after-remap=false --reporter text --reporter json --reporter html --reporter lcov cross-env NODE_ENV=test node --import=reflect-metadata node_modules/mocha/bin/mocha.js --timeout 10000 \"dist/test/unit/**/*.test.js\" \"dist/test/integration/**/*.test.js\" \"dist/test/compatibility/**/*.test.js\" --reporter json --reporter-option output=artifacts/tests.json",
+    "build": "node scripts/build.ts",
+    "test:examples": "node --import=tsx test/examples/run.ts",
+    "test:package": "node --import=tsx test/package/run.ts",
+    "test:registry": "node --import=tsx test/package/run.ts --registry",
+    "validate": "yarn lint && yarn typecheck && yarn test && yarn test:coverage && yarn build && yarn test:examples && yarn test:package",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/*.ts\" \"examples/**/*.ts\" \"*.ts\" \"*.json\" \"examples/cases.json\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/*.ts\" \"examples/**/*.ts\" \"*.ts\" \"*.json\" \"examples/cases.json\"",
+    "benchmark": "node scripts/build.ts && node scripts/benchmark.ts",
+    "benchmark:smoke": "node scripts/build.ts && node scripts/benchmark.ts --smoke && node scripts/benchmark-toml.ts --smoke",
+    "benchmark:traversals": "node scripts/build.ts && node --expose-gc scripts/profile-traversals.ts",
+    "benchmark:toml": "node scripts/build.ts && node scripts/benchmark-toml.ts"
+  },
+  "dependencies": {
+    "@types/node": "24.19.2",
+    "dotenv": "18.0.8",
+    "inversify": "8.2.3",
+    "js-yaml": "5.5.0",
+    "reflect-metadata": "0.2.2",
+    "smol-toml": "1.9.1"
+  },
+  "devDependencies": {
+    "@actions/expressions": "0.3.61",
+    "@eslint/js": "^10.0.1",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/sinon": "^22.0.0",
+    "c8": "^12.0.0",
+    "chai": "6.3.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "mocha": "12.0.3",
+    "prettier": "3.9.10",
+    "sinon": "^22.1.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.71.2",
+    "zod": "4.6.7"
+  }
+}

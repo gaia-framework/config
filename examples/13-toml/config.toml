@@ -1,0 +1,14 @@
+port = "${EXAMPLE_PORT:-6000}"
+enabled = "${EXAMPLE_ENABLED:-true}"
+label = "${EXAMPLE_NAME}"
+literal = "$${EXAMPLE_NAME}"
+clear = "inherited"
+token = { "$env" = "EXAMPLE_TOKEN" }
+text = { "$file" = "./parts/message.txt" }
+destination = { "$include" = "./parts/destinations.toml#destinations.0" }
+yaml = { "$include" = "./parts/options.yaml" }
+json = { "$include" = "./parts/values.json#selected" }
+
+[service]
+name = "synthetic"
+tags = ["base"]

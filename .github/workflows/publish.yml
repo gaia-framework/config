@@ -1,0 +1,282 @@
+name: Publish package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package.json version to release
+        required: true
+        type: string
+      commit:
+        description: Full reviewed main commit SHA
+        required: true
+        type: string
+      dry-run:
+        description: Validate and inspect the archive without publishing
+        required: true
+        default: true
+        type: boolean
+      tag:
+        description: npm distribution tag
+        required: true
+        default: latest
+        type: choice
+        options:
+          - latest
+          - next
+          - test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release-${{ github.repository }}-${{ github.sha }}
+  cancel-in-progress: false
+  queue: max
+
+env:
+  NPM_TRUSTED_PUBLISHING_ENABLED: ${{ vars.NPM_TRUSTED_PUBLISHING_ENABLED }}
+
+jobs:
+  preflight:
+    if: >-
+      github.repository == 'gaia-framework/config' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      actions: read
+
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_COMMIT: ${{ inputs.commit }}
+      RELEASE_DRY_RUN: ${{ github.event_name == 'push' && 'false' || toJSON(inputs.dry-run) }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_BEFORE: ${{ github.event.before }}
+
+    outputs:
+      requested: ${{ steps.plan.outputs.requested }}
+      version: ${{ steps.plan.outputs.version }}
+      commit: ${{ steps.plan.outputs.commit }}
+      dry-run: ${{ steps.plan.outputs.dry-run }}
+      tag: ${{ steps.plan.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Select the release from the exact package manifest
+        id: plan
+        run: node scripts/release.ts select
+
+      - name: Require reviewer protection before a live release
+        if: steps.plan.outputs.requested == 'true' && steps.plan.outputs.dry-run == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/gaia-framework/config/environments/npm > "$RUNNER_TEMP/npm-environment.json"
+          gh api repos/gaia-framework/config/environments/npm/deployment-branch-policies > "$RUNNER_TEMP/npm-branches.json"
+          node scripts/release.ts protection "$RUNNER_TEMP/npm-environment.json" "$RUNNER_TEMP/npm-branches.json"
+
+  validate:
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/ci.yml
+
+  archive:
+    needs: [preflight, validate]
+    if: needs.preflight.outputs.requested == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      RELEASE_DRY_RUN: 'true'
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Install frozen dependencies
+        run: node .yarn/releases/yarn-4.12.0.cjs install --immutable
+
+      - name: Build the release
+        run: node .yarn/releases/yarn-4.12.0.cjs build
+
+      - name: Pack the release with Yarn
+        run: |
+          mkdir -p artifacts/release
+          node .yarn/releases/yarn-4.12.0.cjs pack --out artifacts/release/package.tgz
+
+      - name: Inspect the exact archive or verify an already-published retry
+        run: node scripts/release.ts publish artifacts/release/package.tgz
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-release-archive
+          path: artifacts/release/package.tgz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: >-
+      github.repository == 'gaia-framework/config' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.preflight.outputs.requested == 'true' &&
+      needs.preflight.outputs.dry-run == 'false'
+    needs: [preflight, archive]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: npm
+
+    concurrency:
+      group: npm-upload-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
+
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-release-archive
+          path: artifacts/release
+
+      - name: Recheck reviewer and branch protection before uploading
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/gaia-framework/config/environments/npm > "$RUNNER_TEMP/npm-environment.json"
+          gh api repos/gaia-framework/config/environments/npm/deployment-branch-policies > "$RUNNER_TEMP/npm-branches.json"
+          node scripts/release.ts protection "$RUNNER_TEMP/npm-environment.json" "$RUNNER_TEMP/npm-branches.json"
+
+      - name: Publish the validated archive with npm trusted publishing
+        env:
+          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
+        run: node scripts/release.ts publish artifacts/release/package.tgz
+
+  verify-registry:
+    needs: [preflight, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-release-archive
+          path: artifacts/release
+
+      - name: Install frozen dependencies
+        run: node .yarn/releases/yarn-4.12.0.cjs install --immutable
+
+      - name: Verify installation and examples from the public registry
+        run: node .yarn/releases/yarn-4.12.0.cjs test:registry
+
+      - name: Verify npm serves the exact release archive
+        run: node scripts/release.ts registry artifacts/release/package.tgz
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: npm-registry-validation
+          path: artifacts/registry-validation.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  github-release:
+    needs: [preflight, archive, verify-registry]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    concurrency:
+      group: github-release-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
+
+    permissions:
+      contents: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+      RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
+      RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-release-archive
+          path: artifacts/release
+
+      - name: Recheck the exact published archive
+        run: node scripts/release.ts registry artifacts/release/package.tgz
+
+      - name: Create the version tag and GitHub Release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/github-release.ts artifacts/release/package.tgz

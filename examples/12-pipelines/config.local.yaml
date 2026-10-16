@@ -1,0 +1,11 @@
+control:
+  port: 4470
+  allowedOrigins:
+    - https://local.example.test
+pipelines:
+  daily:
+    stages:
+      - read
+      - write
+storage:
+  fallbackDirectory: null

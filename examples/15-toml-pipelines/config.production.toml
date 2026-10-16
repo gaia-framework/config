@@ -1,0 +1,8 @@
+[control]
+port = 4450
+
+[pipelines.daily]
+timeoutMs = 60000
+
+[storage]
+directory = "./production-output"

@@ -1,0 +1,28 @@
+[service]
+name = "document-service"
+environment = "${SERVICE_ENV:-development}"
+
+[http]
+host = "${SERVICE_EXAMPLE_HOST:-localhost}"
+port = "${SERVICE_EXAMPLE_PORT:-4000}"
+corsOrigins = [ "https://app.example.test", "https://admin.example.test" ]
+
+[storage]
+driver = "filesystem"
+directory = "./data"
+fallbackDirectory = "./fallback"
+
+[authentication]
+enabled = "${SERVICE_EXAMPLE_AUTH_ENABLED:-true}"
+
+[authentication.apiKey]
+"$env" = "SERVICE_EXAMPLE_KEY"
+
+[backgroundJobs]
+"$include" = "./parts/jobs.yaml"
+
+[routes]
+"$include" = "./parts/routes.json#public"
+
+[logging]
+level = "info"

@@ -1,0 +1,3 @@
+port: ${EXAMPLE_PORT:-4001}
+label: ${EXAMPLE_LABEL:-isolated}
+"literal.name": value

@@ -1,0 +1,4 @@
+label: {$env: EXAMPLE_LABEL}
+text: {$file: ./sample.txt}
+yaml: {$include: ./parts/service.yml}
+fragment: {$include: "./parts/values.json#items.1"}

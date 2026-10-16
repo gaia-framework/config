@@ -1,0 +1,4 @@
+port = 6100
+
+[service]
+tags = ["production"]

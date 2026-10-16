@@ -1,0 +1,15 @@
+[pipelines.daily]
+enabled = true
+stages = [ "read", "validate", "write" ]
+timeoutMs = 30000
+
+[pipelines.daily.destination]
+"$include" = "./destinations.json#destinations.primary"
+
+[pipelines.archive]
+enabled = false
+stages = [ "read", "compress", "write" ]
+timeoutMs = 45000
+
+[pipelines.archive.destination]
+"$include" = "./destinations.json#destinations.secondary"

@@ -1,0 +1,8 @@
+cleanup:
+  enabled: true
+  intervalSeconds: ${SERVICE_EXAMPLE_INTERVAL:-120}
+  retainDays: 7
+indexing:
+  enabled: false
+  intervalSeconds: 300
+  retainDays: 1

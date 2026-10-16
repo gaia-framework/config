@@ -1,0 +1,33 @@
+application:
+  name: batch-workshop
+  environment: ${PIPELINE_ENV:-development}
+control:
+  port: ${PIPELINE_EXAMPLE_PORT:-4400}
+  allowedOrigins:
+    - https://dashboard.example.test
+storage:
+  driver: filesystem
+  directory: ./output
+  fallbackDirectory: ./spool
+security:
+  accessKey:
+    $env: PIPELINE_EXAMPLE_ACCESS_KEY
+workers:
+  $include: ./parts/workers.yaml
+pipelines:
+  $include: ./parts/pipelines.yaml#pipelines
+routing:
+  rules:
+    $include: ./parts/routes.yaml#rules
+  primaryRule:
+    $include: ./parts/routes.yaml#rules.0
+messages:
+  banner:
+    $file: ./parts/banner.txt
+  literal: $${PIPELINE_EXAMPLE_ACCESS_KEY}
+  greeting: ${PIPELINE_EXAMPLE_GREETING:-"Batch ready"}
+features:
+  audit: true
+  telemetry: ${PIPELINE_EXAMPLE_TELEMETRY_ENABLED:-false}
+logging:
+  level: info

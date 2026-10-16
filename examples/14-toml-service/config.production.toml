@@ -1,0 +1,5 @@
+[http]
+port = 4100
+
+[storage]
+directory = "./production-data"

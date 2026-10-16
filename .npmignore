@@ -1,0 +1,57 @@
+# The package.json files allowlist is authoritative. npm gives it precedence
+# over this root ignore file; keep it narrow and verify both packers.
+# Keep dist/src, src, docs and examples: consumers need compiled exports,
+# declarations, development-condition sources and runnable documentation.
+
+# Repository metadata, tooling and private investigation output.
+/.git/
+/.github/
+/.yarn/
+/.evidence/
+/.vscode/
+/.idea/
+/.pnp.*
+/.yarnrc.yml
+/.npmrc
+/AGENTS.md
+/JOURNAL.md
+/journal/
+/scripts/
+/test/
+/coverage/
+/artifacts/
+/dist/test/
+/eslint.config.*
+/.prettier*
+/tsconfig*.json
+/yarn.lock
+/package-lock.json
+/npm-shrinkwrap.json
+/pnpm-lock.yaml
+
+# Local configuration and credentials. Keep synthetic example YAML fixtures.
+.env
+.env.*
+/config.yaml
+/config.*.yaml
+/config.yml
+/config.*.yml
+/config.toml
+/config.*.toml
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies, logs, archives and editor/compiler caches.
+node_modules/
+__pycache__/
+*.pyc
+*.log
+*.tgz
+*.tsbuildinfo
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
