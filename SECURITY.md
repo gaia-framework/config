@@ -2,9 +2,12 @@
 
 ## Reporting a vulnerability
 
-Email **contact@gaiaframework.com** to report a suspected security vulnerability
-privately. Please do not disclose vulnerabilities in public issues or pull
-requests before coordinated disclosure.
+Report a suspected security vulnerability privately through
+[GitHub's Report a vulnerability form](https://github.com/gaia-framework/config/security/advisories/new).
+You can also email **contact@gaiaframework.com**.
+
+Please do not disclose vulnerabilities in public issues or pull requests before
+coordinated disclosure.
 
 Include the affected version or commit, Node.js version, a minimal reproduction
 using synthetic configuration, and the expected impact. Do not send real tokens,
