@@ -22,6 +22,9 @@ async function versionAvailable(name: string, version: string): Promise<boolean>
   try {
     // Yarn 4 requests full metadata with a literal @ and a lowercase encoded slash.
     const response = await fetch(`${registry}/${name.replace('/', '%2f')}`, {
+      ...(process.env.NPM_TOKEN
+        ? { headers: { authorization: `Bearer ${process.env.NPM_TOKEN}` } }
+        : {}),
       signal: AbortSignal.timeout(requestTimeout)
     });
 
@@ -83,7 +86,7 @@ function installationAvailable(result: InstallationResult, name: string, version
     return false;
   }
 
-  assert.fail(`Public registry consumer installation failed:\n${output}`);
+  assert.fail(`Registry consumer installation failed:\n${output}`);
 }
 
 export async function waitForRegistry(
@@ -100,15 +103,13 @@ export async function waitForRegistry(
     }
 
     if (attempt < attempts) {
-      console.log(
-        `Waiting for public npm availability for ${name}@${version} (${attempt}/${attempts}).`
-      );
+      console.log(`Waiting for npm availability for ${name}@${version} (${attempt}/${attempts}).`);
       await new Promise<void>((resolve) => setTimeout(resolve, retryDelay));
     }
   }
 
   throw new Error(
-    `${name}@${version} is not available from the public registry after ${attempts} checks. ` +
+    `${name}@${version} is not available from the npm registry after ${attempts} checks. ` +
       'Inspect npm processing or staging status before retrying verification; do not republish.'
   );
 }

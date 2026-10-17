@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+- Make ConfigService container-independent and remove Inversify and reflect-metadata from runtime dependencies.
+- Replace automatic service construction with explicit container bindings; consumers using `.toSelf()` must migrate to a factory or an existing instance.
+- Verify container-free consumers and consumer-owned Inversify 6, 7 and 8 without changing configuration loading or reader APIs.
+- Preserve private npm access during publication and authenticate registry verification with a separate read credential.
 
 - Match release readiness checks to Yarn's registry requests and retry installation
   only when the newly published version is still unavailable. Keep registry

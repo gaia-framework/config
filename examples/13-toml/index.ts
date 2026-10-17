@@ -34,7 +34,9 @@ const raw = loadConfigLayersFromFiles(options);
 const reader = createConfigFromFiles(options);
 const container = new Container();
 container.bind(ConfigReader).toConstantValue(reader);
-container.bind(ConfigService).toSelf();
+container
+  .bind(ConfigService)
+  .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
 const service = container.get(ConfigService);
 
 console.log(

@@ -9,7 +9,7 @@ examples folder into an application with the package installed. Values are synth
 
 This demonstrates all four TOML layers, JSON object/path environment overrides,
 placeholders, null clearing, TOML/YAML/JSON includes, text/environment directives,
-schema defaults and actual automatic Inversify constructor injection.
+schema defaults and explicit Inversify service construction.
 
 ```sh
 node index.ts

@@ -21,6 +21,10 @@ import { waitForRegistry } from './wait-for-registry.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const fromRegistry = process.argv.includes('--registry');
 const sourceManifest = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
+if (fromRegistry && sourceManifest.publishConfig.access === 'restricted') {
+  assert.ok(process.env.NPM_TOKEN?.trim(), 'NPM_TOKEN with package read access is required.');
+}
+
 const require = createRequire(import.meta.url);
 const yarn = path.join(root, '.yarn/releases/yarn-4.12.0.cjs');
 assert.ok(existsSync(yarn), 'The repository includes its pinned Yarn runtime.');
@@ -151,6 +155,9 @@ try {
   const installEnv: NodeJS.ProcessEnv = {
     ...process.env,
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
+    ...(fromRegistry && process.env.NPM_TOKEN
+      ? { YARN_NPM_AUTH_TOKEN: process.env.NPM_TOKEN, YARN_NPM_ALWAYS_AUTH: 'true' }
+      : {}),
     ...(fromRegistry ? { YARN_GLOBAL_FOLDER: path.join(directory, '.yarn-global') } : {})
   };
   if (fromRegistry) {
@@ -200,13 +207,15 @@ try {
   const documents = checkDocumentation(installed);
   const manifest = JSON.parse(readFileSync(path.join(installed, 'package.json'), 'utf8'));
   assert.notEqual(manifest.private, true);
-  assert.equal(manifest.publishConfig.access, 'public');
+  assert.equal(manifest.publishConfig.access, sourceManifest.publishConfig.access);
   assert.equal(manifest.publishConfig.registry, 'https://registry.npmjs.org');
   assert.equal(manifest.name, '@gaia-framework/config');
   assert.equal(manifest.repository.url, 'https://github.com/gaia-framework/config.git');
   assert.equal(manifest.license, 'MIT');
   for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
-    assert.equal(manifest[section]?.zod, undefined, `Zod must not be a ${section} entry.`);
+    for (const name of ['zod', 'inversify', 'reflect-metadata']) {
+      assert.equal(manifest[section]?.[name], undefined, `${name} must not be a ${section} entry.`);
+    }
   }
 
   assert.equal(manifest.devDependencies.zod, sourceManifest.devDependencies.zod);
@@ -275,6 +284,31 @@ try {
   writeFileSync(path.join(directory, 'config.yaml'), 'value: file\n');
 
   const fixtureDirectory = path.join(root, 'test/package/fixtures');
+  const withoutDi = 'without-di.ts';
+  for (const name of ['inversify', '@inversifyjs', 'reflect-metadata']) {
+    assert.equal(existsSync(path.join(directory, 'node_modules', name)), false);
+    assert.equal(existsSync(path.join(installed, 'node_modules', name)), false);
+  }
+
+  cpSync(path.join(fixtureDirectory, withoutDi), path.join(directory, withoutDi));
+  compileFixtures(directory, [withoutDi]);
+  run(['compiled/without-di.js'], directory, cleanEnv);
+  run([...developmentArgs, 'compiled/without-di.js'], directory, cleanEnv);
+
+  // Consumers own their container version; the core package supplies no DI runtime.
+  const diFixture = 'di-versions.ts';
+  cpSync(path.join(fixtureDirectory, diFixture), path.join(directory, diFixture));
+  const containerVersions = ['6.2.2', '7.10.4', '8.2.3'];
+  for (const version of containerVersions) {
+    run([yarn, 'add', '--exact', `inversify@${version}`, 'reflect-metadata@0.2.2'], directory, {
+      ...cleanEnv,
+      YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+    });
+    compileFixtures(directory, [diFixture]);
+    run(['compiled/di-versions.js'], directory, cleanEnv);
+    run([...developmentArgs, 'compiled/di-versions.js'], directory, cleanEnv);
+  }
+
   const withoutZod = 'without-zod.ts';
 
   // Prove ordinary imports, declarations, schemas and DI work before adding Zod.
@@ -365,11 +399,13 @@ try {
     JSON.stringify(
       {
         passed: true,
-        source: fromRegistry ? 'public npm registry' : 'local Yarn archive',
+        source: fromRegistry ? 'authenticated npm registry' : 'local Yarn archive',
         version: manifest.version,
         npmManifestMatchesYarn: true,
         compiledTestProbeExcluded: true,
         zodFreeConsumerPassed: true,
+        diFreeConsumerPassed: true,
+        consumerOwnedInversifyVersions: containerVersions,
         consumerOwnedZodVersion: '4.6.6',
         packageName: manifest.name,
         license: manifest.license,

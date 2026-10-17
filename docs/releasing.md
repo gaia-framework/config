@@ -1,13 +1,20 @@
 # Releasing
 
-`package.json` is the release version source. For example, version `0.2.0`
-publishes `@gaia-framework/config@0.2.0` and creates Git tag/GitHub Release
-`v0.2.0` at the exact validated commit. Branch names do not determine versions.
+`package.json` is the release version source. For example, version `0.3.0`
+publishes `@gaia-framework/config@0.3.0` and creates Git tag/GitHub Release
+`v0.3.0` at the exact validated commit. Branch names do not determine versions.
 
 Registry publication and repository visibility are separate. A public npm
 package does not make its GitHub repository or GitHub Releases public. The npm
 archive includes source, compiled exports, declarations, documentation, examples
 and the MIT license. Keep credentials and local reports out of Git and archives.
+
+The package currently uses restricted (private) npm access. Both package metadata
+and the upload command enforce it. Release jobs use the repository `NPM_TOKEN`
+secret only for reading private registry metadata and consumer installation;
+the upload itself still uses OIDC. Keep this read token authorized for the package.
+Provenance stays disabled for private packages. Visibility changes require a
+separate explicit decision.
 
 ## Normal release flow
 
@@ -28,7 +35,7 @@ and the MIT license. Keep credentials and local reports out of Git and archives.
    version detection is automatic.
 6. The protected job publishes through npm Trusted Publishing (OIDC). A separate
    read-only job waits for registry availability and verifies an independent
-   installation, runtime/types/development imports, DI and all examples. Public
+   installation, runtime/types/development imports, DI and all examples. Authenticated
    npm integrity must match the exact Actions archive.
 7. Only after registry acceptance, GitHub CLI creates a draft release with
    generated notes, uploads the same archive and checks its digest, then
@@ -71,7 +78,7 @@ For example, after merging an unpublished version into `main`:
 ```sh
 git fetch origin main
 gh workflow run publish.yml --ref main \
-  -f version=0.2.0 \
+  -f version=0.3.0 \
   -f commit="$(git rev-parse origin/main)" \
   -f dry-run=true \
   -f tag=latest
@@ -143,7 +150,8 @@ Before enabling live publishing:
 
 Only the protected publishing job receives `id-token: write`. The GitHub Release
 job alone receives `contents: write`, using the built-in `GITHUB_TOKEN`. No
-personal access token or permanent npm token is required. GitHub CLI generates
+personal access token or permanent npm write token is required. Private registry
+verification uses the separate `NPM_TOKEN` read credential. GitHub CLI generates
 release notes and creates the tag directly at the selected commit; publication
 is not chained through a tag-triggered workflow.
 
@@ -152,8 +160,7 @@ through the configured npm identity. Fork validation uses read-only permissions
 and no publishing credentials. A contributor editing their fork's workflow does
 not inherit access to this repository or the npm trusted publisher.
 
-npm provenance is enabled only for public-source releases and stays disabled
-while the GitHub repository is private. Visibility is never changed by this
+npm provenance stays disabled for the current private package. Visibility is never changed by this
 workflow. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [GitHub CLI releases](https://cli.github.com/manual/gh_release_create) and
 [GitHub concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
@@ -169,4 +176,4 @@ responses are simulated; these tests create no real releases or packages.
 `yarn validate` additionally builds and packs the actual package and checks an
 independently installed consumer. Hosted Linux/Windows CI runs the same checks.
 Only a separately approved live release establishes end-to-end hosted OIDC,
-GitHub Release creation and public registry acceptance for a new version.
+GitHub Release creation and authenticated registry acceptance for a new version.

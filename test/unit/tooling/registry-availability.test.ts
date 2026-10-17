@@ -14,7 +14,7 @@ function published(): Response {
   return metadata({ [version]: { name, version } });
 }
 
-describe('Public registry availability', () => {
+describe('Registry availability', () => {
   let clock: sinon.SinonFakeTimers;
   let request: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
 
@@ -30,6 +30,9 @@ describe('Public registry availability', () => {
   });
 
   it('checks exact public Yarn resolution metadata without authentication', async () => {
+    const environment = { ...process.env };
+    delete environment.NPM_TOKEN;
+    sinon.stub(process, 'env').value(environment);
     request.resolves(published());
 
     await waitForRegistry(name, version);
@@ -40,6 +43,17 @@ describe('Public registry availability', () => {
     assert.equal(options?.headers, undefined);
     assert.ok(options?.signal instanceof AbortSignal);
     assert.equal(clock.now, 0);
+  });
+
+  it('authenticates private metadata requests with the consumer read token', async () => {
+    sinon.stub(process, 'env').value({ ...process.env, NPM_TOKEN: 'synthetic-read-token' });
+    request.resolves(published());
+
+    await waitForRegistry(name, version);
+
+    assert.deepEqual(request.firstCall.args[1]?.headers, {
+      authorization: 'Bearer synthetic-read-token'
+    });
   });
 
   it('waits for the exact version rather than accepting an older latest release', async () => {

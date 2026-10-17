@@ -59,12 +59,12 @@ assert.deepEqual(mutable.keyPaths(), beforeMutation);
 beforeMutation[0]!.push('corrupted');
 assert.deepEqual(mutable.keyPaths(), [['value'], ['value', 'name']]);
 
-if (!process.execArgv.includes('--conditions=development')) {
-  const container = new Container();
-  container.bind(ConfigReader).toConstantValue(reader);
-  container.bind(ConfigService).toSelf();
-  assert.deepEqual(container.get(ConfigService).keyPaths(), reader.keyPaths());
-}
+const container = new Container();
+container.bind(ConfigReader).toConstantValue(reader);
+container
+  .bind(ConfigService)
+  .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
+assert.deepEqual(container.get(ConfigService).keyPaths(), reader.keyPaths());
 
 const directory = mkdtempSync(path.resolve('snapshot-alias-'));
 

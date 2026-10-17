@@ -35,7 +35,7 @@ flowchart TD
 | `src/reader/ConfigReader.ts` | Getter contracts, traversal, options and lookup caches |
 | `src/reader/ConfigKeyIndex.ts` | Construction-time key capture and lazy literal-path materialization |
 | `src/reader/immutableSnapshot.ts` | Optional descriptor-aware plain-data copy and freezing |
-| `src/services/ConfigService.ts` | Existing Inversify-decorated reader delegation |
+| `src/services/ConfigService.ts` | Container-independent reader delegation |
 
 ## Preserve resolution context
 

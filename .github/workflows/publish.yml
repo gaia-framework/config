@@ -108,6 +108,7 @@ jobs:
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
       RELEASE_DRY_RUN: 'true'
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7
@@ -167,6 +168,7 @@ jobs:
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
       RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7
@@ -193,7 +195,7 @@ jobs:
 
       - name: Publish the validated archive with npm trusted publishing
         env:
-          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
+          NPM_CONFIG_PROVENANCE: 'false'
         run: node scripts/release.ts publish artifacts/release/package.tgz
 
   verify-registry:
@@ -206,6 +208,7 @@ jobs:
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
       RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7
@@ -225,7 +228,7 @@ jobs:
       - name: Install frozen dependencies
         run: node .yarn/releases/yarn-4.12.0.cjs install --immutable
 
-      - name: Verify installation and examples from the public registry
+      - name: Verify authenticated installation and examples from npm
         run: node .yarn/releases/yarn-4.12.0.cjs test:registry
 
       - name: Verify npm serves the exact release archive
@@ -257,6 +260,7 @@ jobs:
       RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
       RELEASE_DRY_RUN: ${{ needs.preflight.outputs.dry-run }}
       RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7

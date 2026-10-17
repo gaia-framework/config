@@ -31,14 +31,9 @@ try {
   });
   const container = new Container();
   container.bind(ConfigReader).toConstantValue(reader);
-  if (process.execArgv.includes('--conditions=development')) {
-    // tsx does not emit constructor metadata; compiled consumers exercise automatic injection.
-    container
-      .bind(ConfigService)
-      .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
-  } else {
-    container.bind(ConfigService).toSelf();
-  }
+  container
+    .bind(ConfigService)
+    .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
 
   assert.equal(container.get(ConfigService).getNumber('port'), 4000);
   assert.equal(reader.getBoolean('value.enabled'), true);

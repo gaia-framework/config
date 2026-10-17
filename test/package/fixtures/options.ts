@@ -28,12 +28,14 @@ const options = {
   safeErrors: true
 };
 const first = createConfigServiceFromFiles(options);
-if (!process.execArgv.includes('--conditions=development')) {
+{
   const container = new Container();
   container
     .bind(ConfigReader)
     .toConstantValue(new ConfigReader({ value: 'yes' }, { strictGetters: true }));
-  container.bind(ConfigService).toSelf();
+  container
+    .bind(ConfigService)
+    .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
   assert.equal(container.get(ConfigService).getOptionalBoolean('value'), undefined);
 }
 

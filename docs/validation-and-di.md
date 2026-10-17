@@ -40,6 +40,13 @@ reuses it and does not revalidate, even when a schema argument is supplied.
 
 ## Inversify
 
+The library has no runtime dependency on Inversify or `reflect-metadata`.
+Install them in an application that uses this integration:
+
+```sh
+yarn add inversify reflect-metadata
+```
+
 ```js
 import 'reflect-metadata';
 import { Container } from 'inversify';
@@ -47,19 +54,35 @@ import { ConfigReader, ConfigService } from '@gaia-framework/config';
 
 const container = new Container();
 container.bind(ConfigReader).toConstantValue(new ConfigReader({ port: 4001 }));
-container.bind(ConfigService).toDynamicValue(context =>
-  new ConfigService(context.get(ConfigReader))
+container.bind(ConfigService).toDynamicValue(() =>
+  new ConfigService(container.get(ConfigReader))
 );
 console.log(container.get(ConfigService).getNumber('port'));
 ```
 
-This explicit factory binding matches the library's construction boundary and
-does not assume automatic constructor-token inference. `ConfigService` retains
-`@injectable()` and the build retains `experimentalDecorators` and
-`emitDecoratorMetadata`. Applications using their own decorators should retain
-their corresponding TypeScript settings and metadata initialization.
+`ConfigService` is an ordinary class. Register an existing service with
+`toConstantValue`, or use the explicit factory above. These patterns are tested
+with consumer-owned Inversify 6, 7 and 8. Applications using their own decorators
+should retain their corresponding TypeScript settings and metadata initialization;
+configuration loading itself requires neither.
+
+### Migrating from 0.2
+
+Version 0.3 removes the service's Inversify decorator and constructor metadata.
+Replace `container.bind(ConfigService).toSelf()` with an explicit factory as above,
+or register the service returned by `createConfigServiceFromFiles`:
+
+```js
+container.bind(ConfigService).toConstantValue(configService);
+```
+
+Existing class and symbol identifiers, factory signatures, getters and cached
+service identities are unchanged. Keep application schemas and container bindings
+in the application. No optional adapter or container-specific package export is
+required for explicit registration.
 
 Use the compiled package for production. Source development imports need a
 TypeScript loader (`node --import=tsx --conditions=development ...`). A loader
-need not reproduce all emitted decorator metadata; packaged DI acceptance runs
-against the compiled output as well as ordinary explicit construction.
+need not emit decorator metadata for this library. Packed consumer acceptance
+covers compiled output and source development imports both without a container
+and with independently installed Inversify versions.
