@@ -14,7 +14,7 @@ function published(): Response {
   return metadata({ [version]: { name, version } });
 }
 
-describe('Public registry availability', () => {
+describe('Registry availability', () => {
   let clock: sinon.SinonFakeTimers;
   let request: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
 
@@ -30,6 +30,9 @@ describe('Public registry availability', () => {
   });
 
   it('checks exact public Yarn resolution metadata without authentication', async () => {
+    const environment = { ...process.env };
+    delete environment.NPM_TOKEN;
+    sinon.stub(process, 'env').value(environment);
     request.resolves(published());
 
     await waitForRegistry(name, version);

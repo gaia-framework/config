@@ -184,6 +184,9 @@ describe('Release selection and retry safety', () => {
   });
 
   it('uses anonymous exact-version lookups and only treats HTTP 404 as missing', async () => {
+    const environment = { ...process.env };
+    delete environment.NPM_TOKEN;
+    sinon.stub(process, 'env').value(environment);
     const request = sinon.stub(globalThis, 'fetch');
     const published = { ...manifest, dist: { integrity: 'synthetic' } };
     request.resolves(Response.json(published));

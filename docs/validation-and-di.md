@@ -54,8 +54,8 @@ import { ConfigReader, ConfigService } from '@gaia-framework/config';
 
 const container = new Container();
 container.bind(ConfigReader).toConstantValue(new ConfigReader({ port: 4001 }));
-container.bind(ConfigService).toDynamicValue(context =>
-  new ConfigService(context.get(ConfigReader))
+container.bind(ConfigService).toDynamicValue(() =>
+  new ConfigService(container.get(ConfigReader))
 );
 console.log(container.get(ConfigService).getNumber('port'));
 ```
