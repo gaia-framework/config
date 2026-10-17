@@ -3,7 +3,8 @@
 Synchronous configuration for Node.js applications: layered YAML or TOML files,
 environment overrides, reusable file fragments, optional Zod validation, and
 typed getters. Use it with plain objects, load files into a reader, or bind a
-configuration service in Inversify.
+configuration service in your application's DI container. The library has no
+runtime dependency on a container or decorator metadata.
 
 - Ordered file layers and explicit `--config` selection.
 - Deep object merging, array replacement, and explicit `null` values.
@@ -67,13 +68,13 @@ git clone https://github.com/gaia-framework/config.git
 cd config
 yarn install --immutable
 yarn build
-yarn pack --out artifacts/gaia-framework-config-0.2.0.tgz
+yarn pack --out artifacts/gaia-framework-config-0.3.0.tgz
 ```
 
 Copy the generated archive into your application's directory, then install it:
 
 ```sh
-yarn add ./gaia-framework-config-0.2.0.tgz
+yarn add ./gaia-framework-config-0.3.0.tgz
 ```
 
 The archive contains compiled exports, declarations, development sources, docs,
@@ -335,8 +336,8 @@ The [loading guide](docs/loading.md) covers parser depth and cache lifetimes.
 
 ## Inversify integration
 
-The service retains its `@injectable()` decorator. Bind a reader and construct
-the service explicitly:
+Install `inversify` and `reflect-metadata` in the application, bind a reader and
+construct the ordinary service explicitly:
 
 ```js
 import 'reflect-metadata';

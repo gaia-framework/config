@@ -1,6 +1,6 @@
 {
   "name": "@gaia-framework/config",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "description": "Synchronous layered YAML/TOML configuration with environment overrides, directives and schema validation.",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/gaia-framework/config.git"
   },
   "publishConfig": {
-    "access": "public",
+    "access": "restricted",
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
@@ -40,8 +40,8 @@
   "scripts": {
     "lint": "yarn format:check && eslint --flag unstable_native_nodejs_ts_config src test/unit test/integration test/compatibility test/support test/package test/examples scripts/*.ts examples/**/*.ts && node --import=tsx test/support/check-docs.ts && node --import=tsx test/support/check-test-layout.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tooling.json --noEmit",
-    "test": "cross-env NODE_ENV=test node --import=tsx --import=reflect-metadata node_modules/mocha/bin/mocha.js --timeout 10000 \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\" \"test/compatibility/**/*.test.ts\"",
-    "test:coverage": "node scripts/build.ts --tests && c8 --all --include \"dist/src/**/*.js\" --exclude-after-remap=false --reporter text --reporter json --reporter html --reporter lcov cross-env NODE_ENV=test node --import=reflect-metadata node_modules/mocha/bin/mocha.js --timeout 10000 \"dist/test/unit/**/*.test.js\" \"dist/test/integration/**/*.test.js\" \"dist/test/compatibility/**/*.test.js\" --reporter json --reporter-option output=artifacts/tests.json",
+    "test": "cross-env NODE_ENV=test node --import=tsx node_modules/mocha/bin/mocha.js --timeout 10000 \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\" \"test/compatibility/**/*.test.ts\"",
+    "test:coverage": "node scripts/build.ts --tests && c8 --all --include \"dist/src/**/*.js\" --exclude-after-remap=false --reporter text --reporter json --reporter html --reporter lcov cross-env NODE_ENV=test node node_modules/mocha/bin/mocha.js --timeout 10000 \"dist/test/unit/**/*.test.js\" \"dist/test/integration/**/*.test.js\" \"dist/test/compatibility/**/*.test.js\" --reporter json --reporter-option output=artifacts/tests.json",
     "build": "node scripts/build.ts",
     "test:examples": "node --import=tsx test/examples/run.ts",
     "test:package": "node --import=tsx test/package/run.ts",
@@ -57,9 +57,7 @@
   "dependencies": {
     "@types/node": "24.19.2",
     "dotenv": "18.0.8",
-    "inversify": "8.2.3",
     "js-yaml": "5.5.0",
-    "reflect-metadata": "0.2.2",
     "smol-toml": "1.9.1"
   },
   "devDependencies": {
@@ -73,8 +71,10 @@
     "cross-env": "^10.1.0",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
+    "inversify": "8.2.3",
     "mocha": "12.0.3",
     "prettier": "3.9.10",
+    "reflect-metadata": "0.2.2",
     "sinon": "^22.1.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3",

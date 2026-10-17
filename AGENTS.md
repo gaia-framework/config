@@ -25,7 +25,7 @@ of a library change.
 | `src/loader/` | Format parsing, environment substitution, directives and include resolution |
 | `src/merge.ts`, `src/envOverrides.ts` | Merge semantics and environment overrides |
 | `src/reader/` | Typed access, paths, key indexing, conversions and immutable snapshots |
-| `src/services/` | Inversify service delegation and factory-service cache |
+| `src/services/` | Container-independent service delegation and factory-service cache |
 | Other `src/` modules | Shared types, options, input validation and error handling |
 | `test/unit/`, `test/integration/`, `test/compatibility/` | Unit, pipeline and public contract regression tests |
 | `test/package/`, `test/examples/`, `test/support/` | Independent consumers, example checks and shared test infrastructure |
@@ -62,9 +62,9 @@ module. See [architecture](docs/architecture.md) for the existing boundaries.
   choices. Remove obsolete comments and dead code; do not leave commented-out
   implementations or unexplained TODOs.
 - Fix the underlying typing or lint configuration before adding a suppression.
-  If an exception is unavoidable, scope it narrowly and explain why. Keep ESLint's
-  decorator settings aligned with TypeScript. Runtime class imports needed for
-  emitted Inversify constructor metadata must not become type-only imports.
+  If an exception is unavoidable, scope it narrowly and explain why. Keep runtime
+  dependencies container-independent; application DI registration belongs in
+  consumer code and development-only integration tests.
 - Keep refactors focused. Do not combine unrelated formatting, dependency upgrades,
   feature additions and behavior fixes in an optimization or extraction change.
 
@@ -75,7 +75,7 @@ them. A bug fix that changes observable behavior needs focused regression tests
 and a clear explanation in the changelog and pull request.
 
 - Preserve synchronous loading, ESM exports, declaration resolution, the source
-  development condition and Inversify metadata. Do not introduce CommonJS builds,
+  development condition and explicit DI integration. Do not introduce CommonJS builds,
   new formats, watchers, remote sources or async APIs incidentally.
 - Keep YAML as default discovery and TOML explicitly selectable. Preserve file
   precedence, repeated `--config` order, missing/strict-file rules, supplied
@@ -145,7 +145,7 @@ Do not modify the vendored package manager or rely on monorepo hoisting.
   startup for ordinary validation.
 - Exercise default and enabled options, malformed inputs and cross-platform path
   handling when relevant. Preserve paired YAML/TOML feature coverage and actual
-  DI resolution; source-only execution does not prove emitted decorator metadata.
+  DI resolution with consumer-owned dependencies and a container-free consumer.
 - Verify compiled imports, declarations, development exports and examples through
   an independently installed archive outside the checkout. Coverage percentages
   complement behavior assertions; do not exclude production modules or relax

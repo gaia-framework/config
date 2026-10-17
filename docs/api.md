@@ -77,7 +77,7 @@ apply loader environment/error options. See [TOML](toml.md) and [directives](dir
 options and independent caches, snapshotting when `immutable` is enabled.
 `new ConfigService(reader)` wraps a
 reader and delegates all methods below. Both use dotted paths with numeric array
-segments. `ConfigService` is decorated with Inversify's `@injectable()`.
+segments. `ConfigService` is container-independent and has no DI decorators.
 Traversal reads own properties only, including array indices. Inherited names
 such as `constructor` and `toString` are missing unless explicitly supplied as
 configuration data. Explicit `__proto__` keys are stored as ordinary own data;

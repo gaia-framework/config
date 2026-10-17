@@ -1,9 +1,7 @@
-import { injectable } from 'inversify';
-import { ConfigReader } from '../reader/ConfigReader.js';
+import type { ConfigReader } from '../reader/ConfigReader.js';
 import type { ConfigPath } from '../reader/types.js';
 import type { ConfigValue } from '../reader/ConfigReader.js';
 
-@injectable()
 export class ConfigService {
   constructor(private readonly config: ConfigReader) {}
 

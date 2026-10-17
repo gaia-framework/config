@@ -271,6 +271,9 @@ async function main(): Promise<void> {
   const archive = process.argv[2];
   assert.ok(archive, 'Supply the validated release archive.');
   const response = await fetch('https://registry.npmjs.org/@gaia-framework%2Fconfig/latest', {
+    ...(process.env.NPM_TOKEN
+      ? { headers: { authorization: `Bearer ${process.env.NPM_TOKEN}` } }
+      : {}),
     signal: AbortSignal.timeout(15_000)
   });
   assert.ok(response.ok, `Cannot determine npm latest: HTTP ${response.status}.`);

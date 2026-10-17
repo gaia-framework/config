@@ -158,7 +158,7 @@ export function publishArguments(archive: string, plan: ReleasePlan): string[] {
     '--registry',
     registry,
     '--access',
-    'public',
+    'restricted',
     '--tag',
     plan.tag,
     '--ignore-scripts',
@@ -183,6 +183,9 @@ export async function registryVersion(version: string): Promise<PublishedVersion
   const response = await fetch(
     `${registry}/${encodeURIComponent(packageName)}/${encodeURIComponent(version)}`,
     {
+      ...(process.env.NPM_TOKEN
+        ? { headers: { authorization: `Bearer ${process.env.NPM_TOKEN}` } }
+        : {}),
       signal: AbortSignal.timeout(15_000)
     }
   );
@@ -355,6 +358,15 @@ function selectRelease(plan: ReleasePlan, manifest: { name: string; version: str
 
 async function main(): Promise<void> {
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  if (['publish', 'registry'].includes(process.argv[2] ?? '')) {
+    assert.equal(
+      manifest.publishConfig.access,
+      'restricted',
+      'Releases must preserve private npm access.'
+    );
+    assert.ok(process.env.NPM_TOKEN?.trim(), 'NPM_TOKEN with package read access is required.');
+  }
+
   const plan = releasePlan(process.env, manifest);
   if (process.argv[2] === 'select') {
     selectRelease(plan, manifest);
@@ -388,7 +400,7 @@ async function main(): Promise<void> {
   assert.ok(archive, 'Supply the Yarn archive path.');
   if (process.argv[2] === 'registry') {
     assertArchiveMatches(archive, plan.version, await registryVersion(plan.version));
-    console.log('Public npm integrity matches the exact release archive.');
+    console.log('Authenticated npm integrity matches the exact release archive.');
 
     return;
   }

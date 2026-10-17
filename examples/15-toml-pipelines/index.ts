@@ -6,7 +6,9 @@ import { options } from './configuration.ts';
 const reader = createConfigFromFiles({ ...options(process.cwd()), immutable: true });
 const container = new Container();
 container.bind(ConfigReader).toConstantValue(reader);
-container.bind(ConfigService).toSelf();
+container
+  .bind(ConfigService)
+  .toDynamicValue((context) => new ConfigService(context.get(ConfigReader)));
 const config = container.get(ConfigService);
 
 const storage = config.get<{ fallbackDirectory: string | null }>('storage');

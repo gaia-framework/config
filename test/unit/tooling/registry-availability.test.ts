@@ -42,6 +42,17 @@ describe('Public registry availability', () => {
     assert.equal(clock.now, 0);
   });
 
+  it('authenticates private metadata requests with the consumer read token', async () => {
+    sinon.stub(process, 'env').value({ ...process.env, NPM_TOKEN: 'synthetic-read-token' });
+    request.resolves(published());
+
+    await waitForRegistry(name, version);
+
+    assert.deepEqual(request.firstCall.args[1]?.headers, {
+      authorization: 'Bearer synthetic-read-token'
+    });
+  });
+
   it('waits for the exact version rather than accepting an older latest release', async () => {
     request.onFirstCall().resolves(metadata({ '0.1.0': { name, version: '0.1.0' } }));
     request.onSecondCall().resolves(published());

@@ -9,7 +9,7 @@ Do not edit the lockfile by hand. Use Yarn to update dependencies deliberately.
 
 Keep `@types/node` on the Node 24 release line. TypeScript is pinned to 5.9.3;
 compiler upgrades are separate compatibility changes that must verify emitted
-declarations, decorator metadata and independently compiled consumers.
+declarations, container-free use and independently compiled DI consumers.
 Dependabot stays within Node 24 types and the TypeScript 5.9 release line;
 patch updates remain eligible.
 
