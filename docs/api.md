@@ -124,8 +124,8 @@ environment/error settings. `ConfigErrorCode` is the safe error code union, and
 not checked against the schema at compile time; `get<T>` is an assertion, not
 runtime validation. Validate untrusted values with a supplied schema.
 
-Merge/env helper modules and the dotenv helper remain implementation modules,
-not additional package export paths. Readers reject invalid roots and cyclic
+Merge/env helper modules remain implementation modules, not additional package
+export paths. Readers reject invalid roots and cyclic
 own-property graphs. Schemas may transform scalar/array inputs into objects.
 The getter table above describes the defaults. Numeric getters can convert an
 empty string to zero and booleans to numbers; actual NaN/Infinity values are

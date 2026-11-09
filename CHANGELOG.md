@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove the unused internal dotenv helper and runtime dependency. Applications continue to own `.env` loading; public exports and configuration behavior are unchanged.
+- Update vulnerable development-tool dependencies, including patched glob/minimatch versions while upstream tools still request the affected major versions.
 - Publish with public npm access and verify registry metadata and installed consumers without a read token. Keep protected OIDC publishing and exact archive-integrity checks.
 
 ## 0.3.0

@@ -7,6 +7,14 @@ also works. Install dependencies with `yarn install --immutable`; use Yarn for
 dependency changes and packing.
 Do not edit the lockfile by hand. Use Yarn to update dependencies deliberately.
 
+The root `resolutions` temporarily selects patched glob 14 and minimatch 11 for
+development tools whose dependency ranges still request vulnerable versions.
+These overrides do not add runtime dependencies. Recheck them when Mocha, c8,
+ESLint and typescript-eslint update their ranges; remove the overrides when the
+upstream ranges select patched versions. Their major-version changes affect
+matching internals, so validate lint, test discovery and compiled coverage after
+updates rather than assuming compatibility.
+
 Keep `@types/node` on the Node 24 release line. TypeScript is pinned to 5.9.3;
 compiler upgrades are separate compatibility changes that must verify emitted
 declarations, container-free use and independently compiled DI consumers.
