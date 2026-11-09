@@ -77,11 +77,12 @@ function gate(
 }
 
 describe('Release workflow', () => {
-  it('preserves private publication and authenticates registry verification jobs', () => {
+  it('preserves public publication without registry credentials in release jobs', () => {
     const metadata = JSON.parse(readFileSync('package.json', 'utf8'));
-    assert.equal(metadata.publishConfig.access, 'restricted');
+    assert.equal(metadata.publishConfig.access, 'public');
+
     for (const name of ['archive', 'publish', 'verify-registry', 'github-release']) {
-      assert.equal(workflow.jobs[name].env.NPM_TOKEN, '${{ secrets.NPM_TOKEN }}');
+      assert.equal(workflow.jobs[name].env.NPM_TOKEN, undefined);
     }
 
     assert.equal(workflow.jobs.validate.secrets, undefined);
@@ -91,7 +92,7 @@ describe('Release workflow', () => {
     assert.equal(upload.env.NPM_CONFIG_PROVENANCE, 'false');
   });
 
-  it('uses read authentication for private release metadata', async () => {
+  it('reads public release metadata without forwarding an ambient npm token', async () => {
     const request = sinon.stub(globalThis, 'fetch').resolves(
       Response.json({
         name: packageName,
@@ -102,9 +103,7 @@ describe('Release workflow', () => {
     sinon.stub(process, 'env').value({ ...process.env, NPM_TOKEN: 'synthetic-read-token' });
     try {
       assert.equal((await registryVersion('0.3.0'))?.version, '0.3.0');
-      assert.deepEqual(request.firstCall.args[1]?.headers, {
-        authorization: 'Bearer synthetic-read-token'
-      });
+      assert.equal(request.firstCall.args[1]?.headers, undefined);
     } finally {
       sinon.restore();
     }
@@ -340,8 +339,8 @@ describe('Release workflow', () => {
     assert.deepEqual(run.secondCall.args[0], publishArguments('archive.tgz', plan));
     assert.ok(run.secondCall.args[0].includes('--dry-run'));
     assert.ok(run.secondCall.args[0].includes(registry));
-    assert.ok(run.secondCall.args[0].includes('restricted'));
-    assert.ok(!run.secondCall.args[0].includes('public'));
+    assert.ok(run.secondCall.args[0].includes('public'));
+    assert.ok(!run.secondCall.args[0].includes('restricted'));
     assert.ok(run.secondCall.args[0].includes('--ignore-scripts'));
   });
 

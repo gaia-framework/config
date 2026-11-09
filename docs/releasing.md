@@ -9,12 +9,11 @@ package does not make its GitHub repository or GitHub Releases public. The npm
 archive includes source, compiled exports, declarations, documentation, examples
 and the MIT license. Keep credentials and local reports out of Git and archives.
 
-The package currently uses restricted (private) npm access. Both package metadata
-and the upload command enforce it. Release jobs use the repository `NPM_TOKEN`
-secret only for reading private registry metadata and consumer installation;
-the upload itself still uses OIDC. Keep this read token authorized for the package.
-Provenance stays disabled for private packages. Visibility changes require a
-separate explicit decision.
+The package uses public npm access. Both package metadata and the upload command
+enforce it. Registry metadata, integrity checks and consumer installation use
+anonymous reads; no `NPM_TOKEN` secret is needed. Upload authorization still uses
+OIDC. Provenance stays disabled while the source GitHub repository is private.
+Changing npm access does not change GitHub repository visibility.
 
 ## Normal release flow
 
@@ -35,8 +34,8 @@ separate explicit decision.
    version detection is automatic.
 6. The protected job publishes through npm Trusted Publishing (OIDC). A separate
    read-only job waits for registry availability and verifies an independent
-   installation, runtime/types/development imports, DI and all examples. Authenticated
-   npm integrity must match the exact Actions archive.
+   anonymous installation, runtime/types/development imports, DI and all examples.
+   Public npm integrity must match the exact Actions archive.
 7. Only after registry acceptance, GitHub CLI creates a draft release with
    generated notes, uploads the same archive and checks its digest, then
    publishes the GitHub Release. Its tag must point to the validated commit.
@@ -97,7 +96,7 @@ version; do not substitute an archive with different bytes.
 
 The release checks existing npm versions before any upload. Matching identity
 and SHA-512 integrity mean publication already succeeded, so the upload is
-skipped. Different bytes, registry authorization failures and malformed metadata
+skipped. Different bytes, registry failures and malformed metadata
 stop the job. An existing version is never overwritten. Direct npm dry-run also
 rejects an already-published version; matching retries bypass that command and
 verify integrity instead. A retry never changes an existing npm distribution tag.
@@ -150,8 +149,8 @@ Before enabling live publishing:
 
 Only the protected publishing job receives `id-token: write`. The GitHub Release
 job alone receives `contents: write`, using the built-in `GITHUB_TOKEN`. No
-personal access token or permanent npm write token is required. Private registry
-verification uses the separate `NPM_TOKEN` read credential. GitHub CLI generates
+personal access token or permanent npm token is required. Public registry
+verification requires no read credential. GitHub CLI generates
 release notes and creates the tag directly at the selected commit; publication
 is not chained through a tag-triggered workflow.
 
@@ -160,8 +159,9 @@ through the configured npm identity. Fork validation uses read-only permissions
 and no publishing credentials. A contributor editing their fork's workflow does
 not inherit access to this repository or the npm trusted publisher.
 
-npm provenance stays disabled for the current private package. Visibility is never changed by this
-workflow. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
+npm provenance stays disabled while the source GitHub repository is private, even
+though the npm package is public. GitHub repository visibility is never changed
+by this workflow. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
 [GitHub CLI releases](https://cli.github.com/manual/gh_release_create) and
 [GitHub concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
 
@@ -176,4 +176,9 @@ responses are simulated; these tests create no real releases or packages.
 `yarn validate` additionally builds and packs the actual package and checks an
 independently installed consumer. Hosted Linux/Windows CI runs the same checks.
 Only a separately approved live release establishes end-to-end hosted OIDC,
-GitHub Release creation and authenticated registry acceptance for a new version.
+GitHub Release creation and public registry acceptance for a new version.
+
+Making an existing npm package public does not rewrite its previously published
+archives. Older archives can retain `publishConfig.access: restricted`; anonymous
+installation proves current read access. Local archive checks still require
+`publishConfig.access: public`, and release integrity checks compare exact bytes.

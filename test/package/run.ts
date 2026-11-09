@@ -21,9 +21,6 @@ import { waitForRegistry } from './wait-for-registry.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const fromRegistry = process.argv.includes('--registry');
 const sourceManifest = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
-if (fromRegistry && sourceManifest.publishConfig.access === 'restricted') {
-  assert.ok(process.env.NPM_TOKEN?.trim(), 'NPM_TOKEN with package read access is required.');
-}
 
 const require = createRequire(import.meta.url);
 const yarn = path.join(root, '.yarn/releases/yarn-4.12.0.cjs');
@@ -149,17 +146,22 @@ try {
   );
   writeFileSync(path.join(directory, 'yarn.lock'), '');
   writeFileSync(
-    path.join(directory, '.yarnrc.yml'),
+    path.join(directory, '.yarnrc.config-consumer.yml'),
     'nodeLinker: node-modules\nnpmRegistryServer: "https://registry.npmjs.org"\n'
   );
   const installEnv: NodeJS.ProcessEnv = {
     ...process.env,
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
-    ...(fromRegistry && process.env.NPM_TOKEN
-      ? { YARN_NPM_AUTH_TOKEN: process.env.NPM_TOKEN, YARN_NPM_ALWAYS_AUTH: 'true' }
-      : {}),
+    YARN_RC_FILENAME: '.yarnrc.config-consumer.yml',
     ...(fromRegistry ? { YARN_GLOBAL_FOLDER: path.join(directory, '.yarn-global') } : {})
   };
+
+  for (const key of Object.keys(installEnv)) {
+    if (/^(npm_token|node_auth_token|yarn_npm_(auth_token|auth_ident|always_auth))$/i.test(key)) {
+      delete installEnv[key];
+    }
+  }
+
   if (fromRegistry) {
     await waitForRegistry(sourceManifest.name, sourceManifest.version, () =>
       spawnSync(process.execPath, [yarn, 'install'], {
@@ -207,7 +209,13 @@ try {
   const documents = checkDocumentation(installed);
   const manifest = JSON.parse(readFileSync(path.join(installed, 'package.json'), 'utf8'));
   assert.notEqual(manifest.private, true);
-  assert.equal(manifest.publishConfig.access, sourceManifest.publishConfig.access);
+
+  // Published archives retain their original access setting after npm visibility changes.
+  // Anonymous registry installation, rather than that historical setting, proves public access.
+  if (!fromRegistry) {
+    assert.equal(manifest.publishConfig.access, 'public');
+  }
+
   assert.equal(manifest.publishConfig.registry, 'https://registry.npmjs.org');
   assert.equal(manifest.name, '@gaia-framework/config');
   assert.equal(manifest.repository.url, 'https://github.com/gaia-framework/config.git');
@@ -399,7 +407,7 @@ try {
     JSON.stringify(
       {
         passed: true,
-        source: fromRegistry ? 'authenticated npm registry' : 'local Yarn archive',
+        source: fromRegistry ? 'public npm registry' : 'local Yarn archive',
         version: manifest.version,
         npmManifestMatchesYarn: true,
         compiledTestProbeExcluded: true,

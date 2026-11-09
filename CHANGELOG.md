@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Publish with public npm access and verify registry metadata and installed consumers without a read token. Keep protected OIDC publishing and exact archive-integrity checks.
+
 ## 0.3.0
 
 - Make ConfigService container-independent and remove Inversify and reflect-metadata from runtime dependencies.

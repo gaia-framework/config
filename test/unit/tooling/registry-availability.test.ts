@@ -45,15 +45,13 @@ describe('Registry availability', () => {
     assert.equal(clock.now, 0);
   });
 
-  it('authenticates private metadata requests with the consumer read token', async () => {
+  it('does not forward an ambient npm token to public metadata requests', async () => {
     sinon.stub(process, 'env').value({ ...process.env, NPM_TOKEN: 'synthetic-read-token' });
     request.resolves(published());
 
     await waitForRegistry(name, version);
 
-    assert.deepEqual(request.firstCall.args[1]?.headers, {
-      authorization: 'Bearer synthetic-read-token'
-    });
+    assert.equal(request.firstCall.args[1]?.headers, undefined);
   });
 
   it('waits for the exact version rather than accepting an older latest release', async () => {

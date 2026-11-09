@@ -38,15 +38,22 @@ describe('Release upload through the real npm CLI', function () {
   const cases = [
     {
       name: 'uploads the exact archive and selected tag to a disposable registry',
-      rejected: false
+      rejected: false,
+      dryRun: false
     },
     {
       name: 'reports rejected uploads as failures',
-      rejected: true
+      rejected: true,
+      dryRun: false
+    },
+    {
+      name: 'inspects the exact archive in a dry-run without uploading',
+      rejected: false,
+      dryRun: true
     }
   ];
 
-  for (const { name, rejected } of cases) {
+  for (const { name, rejected, dryRun } of cases) {
     it(name, async () => {
       const files = fixture();
       const requests: Array<{ authorization: string | undefined; body: any }> = [];
@@ -128,18 +135,26 @@ describe('Release upload through the real npm CLI', function () {
 
         files.write('user.npmrc', `//127.0.0.1:${port}/:_authToken=synthetic-test-only\n`);
 
-        const args = publishArguments(archive, { version: '0.1.0', tag: 'test', dryRun: false });
+        const args = publishArguments(archive, { version: '0.1.0', tag: 'test', dryRun });
         args[args.indexOf('--registry') + 1] = registry;
 
         const result = await runNpm(args, env);
 
         assert.equal(result.status === 0, !rejected, result.output);
+
+        if (dryRun) {
+          assert.equal(requests.length, 0);
+
+          return;
+        }
+
         assert.equal(requests.length, 1);
 
         const request = requests[0]!;
 
         assert.equal(request.authorization, 'Bearer synthetic-test-only');
         assert.equal(request.body.name, packageName);
+        assert.equal(request.body.access, 'public');
         assert.deepEqual(request.body['dist-tags'], { test: '0.1.0' });
 
         const attachment = Object.values(request.body._attachments)[0] as { data: string };

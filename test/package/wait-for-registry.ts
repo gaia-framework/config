@@ -22,9 +22,6 @@ async function versionAvailable(name: string, version: string): Promise<boolean>
   try {
     // Yarn 4 requests full metadata with a literal @ and a lowercase encoded slash.
     const response = await fetch(`${registry}/${name.replace('/', '%2f')}`, {
-      ...(process.env.NPM_TOKEN
-        ? { headers: { authorization: `Bearer ${process.env.NPM_TOKEN}` } }
-        : {}),
       signal: AbortSignal.timeout(requestTimeout)
     });
 
