@@ -1,8 +1,8 @@
 # Releasing
 
-`package.json` is the release version source. For example, version `0.3.0`
-publishes `@gaia-framework/config@0.3.0` and creates Git tag/GitHub Release
-`v0.3.0` at the exact validated commit. Branch names do not determine versions.
+`package.json` is the release version source. For example, version `0.3.1`
+publishes `@gaia-framework/config@0.3.1` and creates Git tag/GitHub Release
+`v0.3.1` at the exact validated commit. Branch names do not determine versions.
 
 Registry publication and repository visibility are separate. A public npm
 package does not make its GitHub repository or GitHub Releases public. The npm
@@ -41,7 +41,7 @@ Changing npm access does not change GitHub repository visibility.
    publishes the GitHub Release. Its tag must point to the validated commit.
 
 Stable versions automatically use npm `latest`; prereleases such as
-`0.3.0-rc.1` use `next` and a GitHub prerelease. A GitHub Release is marked latest
+`0.3.1-rc.1` use `next` and a GitHub prerelease. A GitHub Release is marked latest
 only when it is a stable `latest` release that still matches npm's current
 `latest` version at the time of the check.
 
@@ -77,7 +77,7 @@ For example, after merging an unpublished version into `main`:
 ```sh
 git fetch origin main
 gh workflow run publish.yml --ref main \
-  -f version=0.3.0 \
+  -f version=0.3.1 \
   -f commit="$(git rev-parse origin/main)" \
   -f dry-run=true \
   -f tag=latest

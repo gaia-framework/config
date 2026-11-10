@@ -1,6 +1,6 @@
 {
   "name": "@gaia-framework/config",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "description": "Synchronous layered YAML/TOML configuration with environment overrides, directives and schema validation.",
   "repository": {

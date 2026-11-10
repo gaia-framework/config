@@ -68,13 +68,13 @@ git clone https://github.com/gaia-framework/config.git
 cd config
 yarn install --immutable
 yarn build
-yarn pack --out artifacts/gaia-framework-config-0.3.0.tgz
+yarn pack --out artifacts/gaia-framework-config-0.3.1.tgz
 ```
 
 Copy the generated archive into your application's directory, then install it:
 
 ```sh
-yarn add ./gaia-framework-config-0.3.0.tgz
+yarn add ./gaia-framework-config-0.3.1.tgz
 ```
 
 The archive contains compiled exports, declarations, development sources, docs,

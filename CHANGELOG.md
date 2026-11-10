@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 - 2026-11-09
 
 - Remove the unused internal dotenv helper and runtime dependency. Applications continue to own `.env` loading; public exports and configuration behavior are unchanged.
 - Update vulnerable development-tool dependencies, including patched glob/minimatch versions while upstream tools still request the affected major versions.
