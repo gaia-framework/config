@@ -3,6 +3,15 @@
   "version": "0.3.1",
   "license": "MIT",
   "description": "Synchronous layered YAML/TOML configuration with environment overrides, directives and schema validation.",
+  "author": "GAIA Framework",
+  "keywords": [
+    "gaia",
+    "gaia-framework",
+    "config",
+    "configuration",
+    "yaml",
+    "toml"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/gaia-framework/config.git"
